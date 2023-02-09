@@ -1,0 +1,142 @@
+using AquaShop.Core.Contracts;
+using AquaShop.Models.Aquariums;
+using AquaShop.Models.Aquariums.Contracts;
+using AquaShop.Models.Decorations;
+using AquaShop.Models.Decorations.Contracts;
+using AquaShop.Models.Fish;
+using AquaShop.Models.Fish.Contracts;
+using AquaShop.Repositories;
+using AquaShop.Utilities.Messages;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+
+namespace AquaShop.Core
+{
+    public class Controller : IController
+    {
+        private DecorationRepository decorations;
+        private readonly ICollection<IAquarium> aquariums;
+        public Controller()
+        {
+            decorations = new DecorationRepository();
+            aquariums = new HashSet<IAquarium>();
+        }
+        public string AddAquarium(string aquariumType, string aquariumName)
+        {
+            IAquarium aquarium;
+            if (aquariumType == nameof(SaltwaterAquarium))
+            {
+                aquarium = new SaltwaterAquarium(aquariumName);
+            }
+            else if (aquariumType == nameof(FreshwaterAquarium))
+            {
+                aquarium = new FreshwaterAquarium(aquariumName);
+            }
+            else
+            {
+                throw new InvalidOperationException(ExceptionMessages.InvalidAquariumType);
+            }
+
+            aquariums.Add(aquarium);
+            return string.Format(OutputMessages.SuccessfullyAdded, aquariumType);
+        }
+
+        public string AddDecoration(string decorationType)
+        {
+            IDecoration decoration;
+            if (decorationType == nameof(Plant))
+            {
+                decoration = new Plant();
+            }
+            else if (decorationType == nameof(Ornament))
+            {
+                decoration = new Ornament();
+            }
+            else
+            {
+                throw new InvalidOperationException(ExceptionMessages.InvalidDecorationType);
+            }
+
+            decorations.Add(decoration);
+            return string.Format(OutputMessages.SuccessfullyAdded, decorationType);
+        }
+
+        public string AddFish(string aquariumName, string fishType, string fishName, string fishSpecies, decimal price)
+        {
+            var targetAquarium = aquariums.FirstOrDefault(x => x.Name == aquariumName);
+            IFish fish;
+            if (fishType == nameof(SaltwaterFish))
+            {
+                fish = new SaltwaterFish(fishName, fishSpecies, price);
+                if (targetAquarium.GetType().Name != nameof(SaltwaterAquarium))
+                {
+                    return OutputMessages.UnsuitableWater;
+                }
+            }
+            else if (fishType == nameof(FreshwaterFish))
+            {
+                fish = new FreshwaterFish(fishName, fishSpecies, price);
+                if (targetAquarium.GetType().Name != nameof(FreshwaterAquarium))
+                {
+                    return OutputMessages.UnsuitableWater;
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException(ExceptionMessages.InvalidFishType);
+            }
+
+            targetAquarium.AddFish(fish);
+            return String.Format(OutputMessages.EntityAddedToAquarium, fishType, aquariumName);
+        }
+
+        public string CalculateValue(string aquariumName)
+        {
+            var targetAquarium = aquariums.FirstOrDefault(x => x.Name == aquariumName);
+
+            decimal sum = targetAquarium.Fish.Sum(x => x.Price) + targetAquarium.Decorations.Sum(x => x.Price);
+
+            return String.Format(OutputMessages.AquariumValue, aquariumName, sum);
+        }
+
+        public string FeedFish(string aquariumName)
+        {
+            var targetAquarium = aquariums.FirstOrDefault(x => x.Name == aquariumName);
+
+            targetAquarium.Feed();
+
+            return String.Format(OutputMessages.FishFed, targetAquarium.Fish.Count);
+        }
+
+        public string InsertDecoration(string aquariumName, string decorationType)
+        {
+            var targetDecoration = decorations.FindByType(decorationType);
+            if (targetDecoration == null)
+            {
+                throw new InvalidOperationException(
+                    string.Format(ExceptionMessages.InexistentDecoration, decorationType));
+            }
+
+            var targetAquarium = aquariums.FirstOrDefault(x => x.Name == aquariumName);
+
+            targetAquarium.AddDecoration(targetDecoration);
+            decorations.Remove(targetDecoration);
+
+            return String.Format(OutputMessages.EntityAddedToAquarium, decorationType, aquariumName);
+        }
+
+        public string Report()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var aquarium in aquariums)
+            {
+                sb.AppendLine(aquarium.GetInfo());
+            }
+
+            return sb.ToString().Trim();
+        }
+    }
+}
