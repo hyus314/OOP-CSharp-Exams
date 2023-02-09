@@ -1,0 +1,23 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace SpaceStation.Models.Astronauts
+{
+    public class Biologist : Astronaut
+    {
+        public Biologist(string name) : base(name, 70.0)
+        {
+        }
+
+        public override void Breath()
+        {
+            Oxygen -= 5;
+            if (this.Oxygen <= 0)
+            {
+                this.Oxygen = 0;
+            }
+        }
+
+    }
+}
