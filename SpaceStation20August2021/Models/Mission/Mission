@@ -1,0 +1,39 @@
+using SpaceStation.Models.Astronauts.Contracts;
+using SpaceStation.Models.Mission.Contracts;
+using SpaceStation.Models.Planets.Contracts;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace SpaceStation.Models.Mission
+{
+    public class Mission : IMission
+    {
+        public void Explore(IPlanet planet, ICollection<IAstronaut> astronauts)
+        {
+            var availableAstronauts = astronauts.Where(x => x.Oxygen > 0).ToList();
+
+
+            foreach (var astronaut in availableAstronauts)
+            {
+                var collectedItems = new List<string>();
+                foreach (var item in planet.Items)
+                {
+                    if (!astronaut.CanBreath)
+                    {
+                        continue;
+                    }
+                    astronaut.Bag.Items.Add(item);
+                    astronaut.Breath();
+                    collectedItems.Add(item);
+                }
+                if (collectedItems.Any())
+                foreach (var item in collectedItems)
+                {
+                    planet.Items.Remove(item);
+                }
+            }
+        }
+    }
+}
