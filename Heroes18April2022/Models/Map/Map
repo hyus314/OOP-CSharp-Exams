@@ -1,0 +1,55 @@
+using Heroes.Models.Contracts;
+using Heroes.Models.Heroes;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace Heroes.Models.Map
+{
+    public class Map : IMap
+    {
+        public string Fight(ICollection<IHero> players)
+        {
+            var allKnights = players.Where(x => x.GetType().Name == nameof(Knight)).ToList();
+            var allBarbarians = players.Where(x => x.GetType().Name == nameof(Barbarian)).ToList();
+
+            while (true)
+            {
+                foreach (var knight in allKnights.Where(x => x.IsAlive))
+                {
+                    foreach (var barb in allBarbarians.Where(x => x.IsAlive))
+                    {
+                        barb.TakeDamage(knight.Weapon.DoDamage());
+                    }
+                }
+                if (allBarbarians.Sum(x => x.Health) == 0)
+                {
+                    break;
+                }
+                foreach (var barb in allBarbarians.Where(x => x.IsAlive))
+                {
+                    foreach (var knight in allKnights.Where(x => x.IsAlive))
+                    {
+                        knight.TakeDamage(barb.Weapon.DoDamage());
+                    }
+                }
+                if (allKnights.Sum(x => x.Health) == 0)
+                {
+                    break;
+                }
+            }
+            ;
+            if (allKnights.Sum(x => x.Health) != 0)
+            {
+                return $"The knights took {allKnights.Where(x => !x.IsAlive).ToList().Count} casualties but won the battle.";
+            }
+            else if (allBarbarians.Sum(x =>x.Health) != 0)
+            {
+                return $"The barbarians took {allBarbarians.Where(x => !x.IsAlive).ToList().Count} casualties but won the battle.";
+            }
+
+            return null;
+        }
+    }
+}
